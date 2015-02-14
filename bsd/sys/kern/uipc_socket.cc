@@ -2847,13 +2847,14 @@ sosetopt(struct socket *so, struct sockopt *sopt)
 		case SO_LABEL:
 			error = EOPNOTSUPP;
 			break;
-
-		default:
-			error = ENOPROTOOPT;
-			break;
 		}
+		/*
+		 * If protocol level provides pr_ctloutput - call it
+                 */
 		if (error == 0 && so->so_proto->pr_ctloutput != NULL)
-			(void)(*so->so_proto->pr_ctloutput)(so, sopt);
+			error = (*so->so_proto->pr_ctloutput)(so, sopt);
+		else
+			error = ENOPROTOOPT;
 	}
 bad:
 	CURVNET_RESTORE();
